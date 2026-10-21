@@ -15,33 +15,35 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential fakeroot git perl unzip curl wget clang lld
+          sudo apt-get install -y build-essential fakeroot git perl unzip curl wget lld libxml2-dev xz-utils
 
-      - name: Setup Theos
+      - name: Setup roothide Theos
         run: |
           set -e
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          export THEOS=$HOME/theos
+
+          # Официальный установщик roothide (без sed-хаков)
+          CI=1 bash -c "$(curl -fsSL https://github.com/roothide/theos/raw/refs/heads/master/bin/install-theos)" || true
+
+          # Принудительная проверка: если clang нет — качаем тулчейн L1ghtmann вручную
+          if [ ! -f "$THEOS/toolchain/linux/iphone/bin/clang" ]; then
+            echo "=== Toolchain not found, installing L1ghtmann manually ==="
+            mkdir -p "$THEOS/toolchain/linux/iphone"
+            curl -L https://github.com/L1ghtmann/iOSToolchain/releases/download/v1.0.0/linux-ios-arm64e-clang-toolchain.tar.lzma -o /tmp/toolchain.tar.lzma
+            tar --strip-components=1 -xf /tmp/toolchain.tar.lzma -C "$THEOS/toolchain/linux/iphone"
+            rm /tmp/toolchain.tar.lzma
+          fi
+
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
-          echo "THEOS_USE_SYSTEM_CLANG=1" >> $GITHUB_ENV
-
-      - name: Download iOS SDKs
-        run: |
-          set -e
-          mkdir -p $HOME/theos/sdks
-          git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git
-          cp -R iOS-SDKs/*.sdk $HOME/theos/sdks/
-          rm -rf iOS-SDKs
-          ls -la $HOME/theos/sdks/
 
       - name: Build package
         run: |
           set -e
           export THEOS=$HOME/theos
           export PATH=$THEOS/bin:$PATH
-          export THEOS_USE_SYSTEM_CLANG=1
           make clean || true
-          make package FINALPACKAGE=1
+          make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=roothide
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
