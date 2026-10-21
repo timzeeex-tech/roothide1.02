@@ -1,0 +1,11 @@
+Package: com.roothide1.tweak
+Name: Roothide1.0
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Depends: mobilesubstrate, preferenceloader, ws.hbang.alist (>= 1.0)
+Description: Hide jailbreak detection for selected apps only.
+Maintainer: Roothide1.0
+Author: Roothide1.0
+Section: Tweaks
+Priority: optional
+Tag: role::hacker
