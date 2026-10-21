@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential fakeroot git perl clang unzip curl wget libz-dev
+          sudo apt-get install -y build-essential fakeroot git perl unzip curl wget lld
 
       - name: Setup Theos
         run: |
@@ -24,12 +24,20 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
+      - name: Setup Toolchain
+        run: |
+          set -e
+          mkdir -p $HOME/theos/toolchain/linux/iphone
+          git clone --depth=1 https://github.com/theos/llvm-project.git $HOME/theos/toolchain/linux/iphone
+          ln -sf $HOME/theos/toolchain/linux/iphone/bin/clang $HOME/theos/toolchain/linux/iphone/bin/clang++ 2>/dev/null || true
+
       - name: Download iOS SDKs
         run: |
           set -e
           mkdir -p $HOME/theos/sdks
           git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git
           cp -R iOS-SDKs/*.sdk $HOME/theos/sdks/
+          rm -rf iOS-SDKs
           ls -la $HOME/theos/sdks/
 
       - name: Build package
